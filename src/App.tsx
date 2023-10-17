@@ -1,58 +1,82 @@
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function App(){
-  
-    const [nome, setNome] = useState("")
-    const [idade, setIdade] = useState("")
 
-    interface InfoAlunoProps{
-      nome: string;
-      idade: number;
+  const [input, setInput] = useState("")
+  const [tasks, setTasks] = useState<string[]>([])
+  const [editTask, setEditTask] = useState({
+    enabled: false,
+    task: ''
+  })
+
+  useEffect(() => {
+    const tarefasSalvas = localStorage.getItem("cursoreact")
+    if(tarefasSalvas){
+      setTasks(JSON.parse(tarefasSalvas))
     }
+  }, [])
 
-    const [infoAluno, setInfoAluno] = useState<InfoAlunoProps>()
+  function handleRegister(){
+    if(!input){
+      alert("Informe a tarefa")
+      return;
+    }
+    if(editTask.enabled){
+      handleSaveEdit()
+      return;
+    }
+    setTasks(tarefas => [...tarefas, input])
+    localStorage.setItem("cursoreact", JSON.stringify([...tasks, input]))
+    setInput("")
+  }
 
-    const [contador, setContador] = useState(0)
-  
-  function mostrarAluno(){
-    setInfoAluno({
-      nome: nome,
-      idade: parseInt(idade),
+  function handleSaveEdit(){
+    const findIndex = tasks.findIndex(task => task === editTask.task)
+    const allTasks = [...tasks]
+    allTasks[findIndex] = input
+    setTasks(allTasks)
+    setInput("")
+    setEditTask({
+      enabled: false,
+      task: ""
+    })
+    localStorage.setItem("cursoreact", JSON.stringify(allTasks))
+  }
+
+  function handleDeleteTask(item: string) {
+    const removeTask = tasks.filter(task => task !== item)
+    setTasks(removeTask)
+    localStorage.setItem("cursoreact", JSON.stringify(removeTask))
+  }
+
+  function handleEdit(item: string) {
+    setInput(item)
+    setEditTask({
+      enabled: true,
+      task: item
     })
   }
 
-  function diminuir() {
-    setContador(contador-1)
-  }
-
-  function aumentar() {
-    setContador(contador+1)
-  }
-
-
-  
   return(
     <div>
-        <h1>Usando useState</h1>
+        <h1>Lista de tarefas</h1>
+        <input 
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)} />
+        <button onClick={handleRegister}>
+          {editTask.enabled ? "Atualizar tarefa" : "Adicionar tarefa"}
+        </button>
+        <hr />
 
-        <input type="text" placeholder="Digite o nome" value={nome} onChange={(e) => setNome(e.target.value)}/>
-        <br /><br />
-        <input type="text" value={idade} onChange={(e) => setIdade(e.target.value)} />
-    
-    <br /><br />
-    <button onClick={mostrarAluno}>Mostrar aluno</button>
-
-    <hr />
-
-    <h3>Aluno: {infoAluno?.nome}</h3>
-    <h2>Idade: {infoAluno?.idade}</h2>
-    
-    <br />
-    <hr />
-    <br />
-
-    <button onClick={diminuir}>-</button>{contador}<button onClick={aumentar}>+</button>
+        {tasks.map((item, index) => (
+          <section key={index}>
+            <span>{item}</span>
+            <button onClick={ () => handleDeleteTask(item)}>Excluir</button>
+            <button onClick={() => handleEdit(item)}>Editar</button>
+          </section>
+        ))}
     </div>
 
     
